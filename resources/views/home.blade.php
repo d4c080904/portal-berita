@@ -17,10 +17,11 @@
                 <h2 class="text-2xl font-bold text-gray-900">Berita Unggulan</h2>
             </div>
 
-            <article class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col md:flex-row hover:shadow-md transition duration-300">
+            {{-- PERBAIKAN: md:flex-row diganti lg:flex-row biar teks nggak kegencet di layar sedang --}}
+            <article class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col lg:flex-row hover:shadow-md transition duration-300">
                 @if($featured->image)
-                    {{-- PERBAIKAN GAMBAR: Porsi dikecilin (md:w-5/12), pakai object-contain dan bg-gray-50 --}}
-                    <div class="md:w-5/12 h-64 md:h-auto md:min-h-[350px] overflow-hidden relative group bg-gray-50 flex items-center justify-center p-4">
+                    {{-- PERBAIKAN: md:w-5/12 diganti lg:w-5/12 --}}
+                    <div class="lg:w-5/12 h-64 lg:h-auto lg:min-h-[350px] overflow-hidden relative group bg-gray-50 flex items-center justify-center p-4">
                         <img src="{{ asset('storage/'.$featured->image) }}" alt="{{ $featured->title }}" class="w-full h-full object-contain group-hover:scale-105 transition duration-500">
                         
                         @if($featured->category)
@@ -31,12 +32,13 @@
                     </div>
                 @endif
                 
-                <div class="p-6 md:p-8 flex-1 flex flex-col justify-center">
+                <div class="p-6 lg:p-8 flex-1 flex flex-col justify-center">
                     <div class="flex items-center text-xs text-gray-500 mb-3 gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         {{ optional($featured->published_at)->format('d F Y') }}
                     </div>
-                    <h1 class="text-2xl md:text-3xl font-bold mb-4 leading-tight text-gray-900 hover:text-red-600 transition">
+                    {{-- PERBAIKAN: md:text-3xl diganti lg:text-3xl --}}
+                    <h1 class="text-2xl lg:text-3xl font-bold mb-4 leading-tight text-gray-900 hover:text-red-600 transition">
                         <a href="{{ route('articles.detail', $featured->slug) }}">{{ $featured->title }}</a>
                     </h1>
                     

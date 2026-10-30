@@ -5,12 +5,17 @@
 @section('content')
 <div class="max-w-5xl mx-auto px-4 py-8">
 
+    {{-- TOMBOL BACK / KEMBALI (BARU) --}}
+    <a href="{{ url()->previous() }}" class="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-red-600 transition mb-6 group">
+        <svg class="w-5 h-5 transform group-hover:-translate-x-1 transition duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali
+    </a>
+
     {{-- MAIN CONTENT (SINGLE COLUMN) --}}
     <div class="w-full mb-16">
         @if($article)
             {{-- Gambar Artikel --}}
             @if($article->image)
-                {{-- PERBAIKAN: object-cover diganti object-contain, tambah bg-gray-50 dan p-4 --}}
                 <div class="w-full bg-gray-50 rounded-lg mb-8 shadow-sm flex items-center justify-center p-4">
                     <img
                         src="{{ asset('storage/'.$article->image) }}"
@@ -35,7 +40,6 @@
                             class="p-2 rounded-full border transition duration-200 {{ $isBookmarked ? 'bg-red-600 text-white border-red-600 hover:bg-red-700' : 'bg-white text-gray-400 border-gray-200 hover:text-red-600 hover:border-red-600' }}"
                             title="{{ $isBookmarked ? 'Hapus Simpanan' : 'Simpan Berita' }}">
                             
-                            {{-- Icon Bookmark Filled / Outline --}}
                             @if($isBookmarked)
                                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
                             @else
@@ -70,7 +74,6 @@
 
             {{-- Isi Konten Artikel --}}
             <div class="prose prose-lg md:prose-xl text-gray-800 max-w-none leading-relaxed space-y-6 mb-12">
-                {{-- PERBAIKAN: Ditambahin html_entity_decode() --}}
                 {!! html_entity_decode($article->content) !!}
             </div>
             
