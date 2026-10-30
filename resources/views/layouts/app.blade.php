@@ -1,6 +1,3 @@
-@php
-    // FIX: Pastikan variabel sidebarOpen didefinisikan untuk x-data
-@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>

@@ -5,29 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use Illuminate\Http\Request;
 
-/**
- * ArticleController
- * Controller Publik yang menangani halaman depan (bukan admin).
- */
 class ArticleController extends Controller
 {
     /**
      * BERANDA (Halaman Utama)
-     * Method ini dipanggil saat user membuka URL '/'
      */
     public function index()
     {
-        // LOGIC MENGAMBIL BERITA UTAMA (FEATURED)
-
-        // 1. Ambil 1 artikel yang dicentang 'is_featured' dan statusnya 'published'
-        // Menggunakan Eager Loading 'with()' agar query lebih hemat (optimasasi)
+        // 1. Ambil Berita Utama (Featured)
         $featured = Article::published()
             ->where('is_featured', true)
-            ->with('category')          // Ambil juga data kategorinya
-            ->latest('published_at')    // Urutkan dari yang terbaru
-            ->first();                  // Ambil 1 saja
+            ->with('category')
+            ->latest('published_at')
+            ->first();
 
-        // Fallback: Jika admin lupa centang berita utama, ambil berita terbaru biasa sebagai gantinya
+        // Fallback jika tidak ada berita featured
         if (!$featured) {
             $featured = Article::published()
                 ->with('category')
@@ -35,70 +27,71 @@ class ArticleController extends Controller
                 ->first();
         }
 
-        // LOGIC MENGAMBIL DAFTAR ARTIKEL LAINNYA
-        // Kita exclude ID artikel featured agar tidak muncul dua kali
+        // 2. Ambil Berita Per Liga (Kita rapihin tanpa closure)
+        // Kita buat base query dulu biar gak nulis ulang "Article::published()"
+        $baseQuery = Article::published()
+            ->when($featured, fn($q) => $q->where('id', '!=', $featured->id))
+            ->latest('published_at');
 
-        // 3. Berita Per Liga (Section Khusus) - Limit 4 per liga
-        // Fungsi helper kecil biar tidak repetitif
-        $getLeagueArticles = function ($slug) use ($featured) {
-            return Article::published()
-                ->whereHas('category', fn($q) => $q->where('slug', $slug))
-                ->when($featured, fn($q) => $q->where('id', '!=', $featured->id))
-                ->latest('published_at')
-                ->take(4)
-                ->get();
-        };
+        // Clone query untuk tiap liga (Efficient & Clean)
+        $ligaInggris = (clone $baseQuery)->whereHas('category', fn($q) => $q->where('slug', 'liga-inggris'))->take(4)->get();
+        $ligaSpanyol = (clone $baseQuery)->whereHas('category', fn($q) => $q->where('slug', 'liga-spanyol'))->take(4)->get();
+        $ligaItalia  = (clone $baseQuery)->whereHas('category', fn($q) => $q->where('slug', 'liga-italia'))->take(4)->get();
+        $transfer    = (clone $baseQuery)->whereHas('category', fn($q) => $q->where('slug', 'transfer'))->take(4)->get();
 
-        $ligaInggris = $getLeagueArticles('liga-inggris');
-        $ligaSpanyol = $getLeagueArticles('liga-spanyol');
-        $ligaItalia  = $getLeagueArticles('liga-italia');
-        $transfer    = $getLeagueArticles('transfer'); // [NEW] Kategori Transfer
-
-        // Melempar data ke View 'home.blade.php'
-        return view('home', [
-            'featured' => $featured,
-            'ligaInggris' => $ligaInggris,
-            'ligaSpanyol' => $ligaSpanyol,
-            'ligaItalia' => $ligaItalia,
-            'transfer' => $transfer,
-        ]);
+        return view('home', compact(
+            'featured', 
+            'ligaInggris', 
+            'ligaSpanyol', 
+            'ligaItalia', 
+            'transfer'
+        ));
     }
 
     /**
-     * DETAIL ARTIKEL + RELATED POST
-     * Method ini dipanggil saat user klik judul berita path: /articles/{slug}
+     * DETAIL ARTIKEL
      */
     public function show(string $slug)
     {
-        // 1. Cari artikel berdasarkan 'slug'
-        // Jika tidak ketemu, otomatis tampilkan 404 (firstOrFail)
         $article = Article::published()
             ->with('category')
             ->where('slug', $slug)
             ->firstOrFail();
 
-        // 2. LOGIC ARTIKEL TERKAIT (Related Posts)
-        // Mencari berita lain dengan Kategori yang SAMA, tapi bukan berita yang sedang dibaca
         $relatedArticles = Article::published()
-            ->where('category_id', $article->category_id) // Kategori sama
-            ->where('id', '!=', $article->id)             // Kecuali artikel ini sendiri
+            ->where('category_id', $article->category_id)
+            ->where('id', '!=', $article->id)
             ->latest('published_at')
-            ->take(4) // Batasi ambil 4 berita saja
+            ->take(4)
             ->get();
 
-        // Tampilkan view detail
-        return view('articles.detail', [
-            'article' => $article,
-            'relatedArticles' => $relatedArticles,
-        ]);
+        return view('articles.detail', compact('article', 'relatedArticles'));
     }
 
-    // Fungsi search biarkan seperti kode lamamu, sudah oke
+    /**
+     * FITUR PENCARIAN (INI YANG BARU DIBENERIN)
+     */
     public function search(Request $request)
     {
-        // ... kode search lama kamu ...
-        // Biar pendek, saya skip tulis ulang search karena tidak error
-        // (Copy dari kode lamamu atau biarkan saja)
-        return redirect()->route('home'); // Placeholder biar tidak error kalau copy paste
+        // 1. Ambil keyword dari input form (pastikan name di form HTML-nya adalah 'q' atau 'query')
+        $keyword = $request->input('q'); 
+
+        // 2. Jika user tidak mengetik apa-apa, kembalikan ke home
+        if (!$keyword) {
+            return redirect()->route('home');
+        }
+
+        // 3. Cari artikel yang judul ATAU isinya mengandung keyword
+        $articles = Article::published()
+            ->with('category')
+            ->where(function ($query) use ($keyword) {
+                $query->where('title', 'like', '%' . $keyword . '%')
+                      ->orWhere('content', 'like', '%' . $keyword . '%');
+            })
+            ->latest('published_at')
+            ->paginate(10); // Pakai pagination biar gak berat kalau hasilnya banyak
+
+        // 4. Lempar ke view hasil pencarian
+        return view('articles.search', compact('articles', 'keyword'));
     }
 }

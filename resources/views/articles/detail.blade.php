@@ -10,11 +10,14 @@
         @if($article)
             {{-- Gambar Artikel --}}
             @if($article->image)
-                <img
-                    src="{{ asset('storage/'.$article->image) }}"
-                    alt="{{ $article->title }}"
-                    class="w-full max-h-[500px] object-cover rounded-lg mb-8 shadow-sm"
-                >
+                {{-- PERBAIKAN: object-cover diganti object-contain, tambah bg-gray-50 dan p-4 --}}
+                <div class="w-full bg-gray-50 rounded-lg mb-8 shadow-sm flex items-center justify-center p-4">
+                    <img
+                        src="{{ asset('storage/'.$article->image) }}"
+                        alt="{{ $article->title }}"
+                        class="max-h-[500px] w-auto object-contain"
+                    >
+                </div>
             @endif
 
             {{-- Judul Artikel --}}
@@ -67,7 +70,8 @@
 
             {{-- Isi Konten Artikel --}}
             <div class="prose prose-lg md:prose-xl text-gray-800 max-w-none leading-relaxed space-y-6 mb-12">
-                {!! $article->content !!}
+                {{-- PERBAIKAN: Ditambahin html_entity_decode() --}}
+                {!! html_entity_decode($article->content) !!}
             </div>
             
             {{-- Tags (Bisa diklik) --}}
